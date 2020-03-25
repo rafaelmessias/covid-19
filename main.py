@@ -15,9 +15,9 @@ from scipy.interpolate import interp1d
 
 ##### DATA
 
-base_path = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-%s.csv"
+base_path = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_%s_global.csv"
 data = {}
-for name in ["Confirmed", "Deaths", "Recovered"]:
+for name in ["confirmed", "deaths"]:
     data[name] = pd.read_csv(base_path % name)
 
 # beds = pd.read_csv("beds.csv", sep=";", header=None)
@@ -27,7 +27,7 @@ for name in ["Confirmed", "Deaths", "Recovered"]:
 
 ##### GLOBALS
 
-all_countries = sorted(data["Confirmed"]["Country/Region"].unique())
+all_countries = sorted(data["confirmed"]["Country/Region"].unique())
 # display_countries must be a list because the order is important
 display_countries = [ "Italy", "Spain", "Sweden", "Denmark", "US" ]
 # display_countries = ["Italy", "Spain", "US", "United Kingdom", "Germany" ]
@@ -52,7 +52,7 @@ def get_df_by_country():
             # Aggregate if there is more than one row
             df = df.sum(axis=0).to_frame()
             return df
-        data_labels = ["Confirmed", "Deaths"]
+        data_labels = ["confirmed", "deaths"]
         df = pd.concat([get_data(x) for x in data_labels], axis="columns")
         df.columns = data_labels
         return df
@@ -69,7 +69,7 @@ def get_df_by_country():
     #beds_by_country
 
 def align(df, cases=100):
-    aligned_df = df[df["Confirmed"] >= cases]
+    aligned_df = df[df["confirmed"] >= cases]
     aligned_df.index = range(aligned_df.shape[0])
     return aligned_df
 
@@ -77,8 +77,8 @@ def align(df, cases=100):
 def make_figure():
     TOOLTIPS = [
         ("# of days", "@index"),
-        ("Deaths", "@Deaths"),
-        ("Cases", "@Confirmed")
+        ("Deaths", "@deaths"),
+        ("Cases", "@confirmed")
     ]
 
     y_axis_type = "log" if is_log_scale else "linear"
@@ -89,14 +89,14 @@ def make_figure():
 
     for i, (country, df) in enumerate(df_by_country.items()):
         over100 = align(df)
-        p.line("index", "Confirmed", source=over100, line_width=2, legend_label=country, line_color=colors[i])
-        p.line("index", "Deaths", source=over100, line_width=2, legend_label=country, line_color=colors[i], line_dash='dashed')
+        p.line("index", "confirmed", source=over100, line_width=2, legend_label=country, line_color=colors[i])
+        p.line("index", "deaths", source=over100, line_width=2, legend_label=country, line_color=colors[i], line_dash='dashed')
         # p.vbar(x=dodge("index", -0.4+(i+1/2)*bar_width, range=p.x_range), top="Deaths", bottom=1, width=bar_width, source=over100, color=colors[i])
-        p.circle("index", "Confirmed", source=over100, line_width=2, color=colors[i], legend_label=country)
+        p.circle("index", "confirmed", source=over100, line_width=2, color=colors[i], legend_label=country)
         if should_extrapolate:
             print(">>> would extrapolate here:", country)
             extrap_df = extrapolate_until(country)
-            p.line("index", "Confirmed", source=extrap_df, line_width=2, line_color=colors[i], line_dash="dotted")
+            p.line("index", "confirmed", source=extrap_df, line_width=2, line_color=colors[i], line_dash="dotted")
 
     p.legend.location = "top_left"
     p.xaxis.axis_label = "# of days after reaching 100 cases"
@@ -108,9 +108,9 @@ def make_figure():
 def make_heatmap():
     dist_matrix = np.zeros(shape=(len(display_countries), len(display_countries)))
     for i, c1 in enumerate(display_countries):
-        df1_al = align(df_by_country[c1])["Confirmed"]
+        df1_al = align(df_by_country[c1])["confirmed"]
         for j, c2 in enumerate(display_countries):
-            df2_al = align(df_by_country[c2])["Confirmed"]
+            df2_al = align(df_by_country[c2])["confirmed"]
             n = min(len(df1_al), len(df2_al))
             dist_matrix[i, j] = euclidean(df1_al[:n], df2_al[:n], [1/n]*n)
             print(c1, c2, dist_matrix[i, j])
@@ -137,7 +137,7 @@ def make_figure_growth_rate():
 
     for i, (country, df) in enumerate(df_by_country.items()):
         df_latest = df.iloc[-last_days-1:,:]
-        y = [df_latest["Confirmed"].iloc[i] / df_latest["Confirmed"].iloc[i-1] for i in range(1, len(df_latest))]
+        y = [df_latest["confirmed"].iloc[i] / df_latest["confirmed"].iloc[i-1] for i in range(1, len(df_latest))]
         p.line(x=range(len(y)), y=y, line_width=2, line_color=colors[i])
         p.circle(x=range(len(y)), y=y, color=colors[i])
 
@@ -179,7 +179,7 @@ def country_rem_change(event):
 
 def extrapolate_until(c):
     df = df_by_country[c]
-    aligned_conf = align(df)["Confirmed"]        
+    aligned_conf = align(df)["confirmed"]        
     # get average growth rate
     rate = 0
     for i in range(1, aligned_conf.shape[0]):
@@ -192,7 +192,7 @@ def extrapolate_until(c):
     for i in range(1, len(new_values)):
         new_values[i] = int(new_values[i-1] * rate)
     new_index = range(len(aligned_conf) - 1, len(aligned_conf) + len(new_values) - 1)
-    return pd.DataFrame(new_values, index=new_index, columns=["Confirmed"])
+    return pd.DataFrame(new_values, index=new_index, columns=["confirmed"])
 
 
 def dt_pckr_change(attrname, old, new):
