@@ -27,15 +27,18 @@ for name in ["confirmed", "deaths"]:
 
 ##### GLOBALS
 
+
+
+
 all_countries = sorted(data["confirmed"]["Country/Region"].unique())
 # display_countries must be a list because the order is important
 display_countries = [ "Italy", "Spain", "Sweden", "Denmark", "US" ]
 # display_countries = ["Italy", "Spain", "US", "United Kingdom", "Germany" ]
 country_sel_value = all_countries[0]
 df_by_country = {}
-should_extrapolate = False
-extra_values = {}
-extrapolate_until_date = None
+# should_extrapolate = False
+# extra_values = {}
+# extrapolate_until_date = None
 is_log_scale = True
 
 ##### CALLBACKS
@@ -93,10 +96,10 @@ def make_figure():
         p.line("index", "deaths", source=over100, line_width=2, legend_label=country, line_color=colors[i], line_dash='dashed')
         # p.vbar(x=dodge("index", -0.4+(i+1/2)*bar_width, range=p.x_range), top="Deaths", bottom=1, width=bar_width, source=over100, color=colors[i])
         p.circle("index", "confirmed", source=over100, line_width=2, color=colors[i], legend_label=country)
-        if should_extrapolate:
-            print(">>> would extrapolate here:", country)
-            extrap_df = extrapolate_until(country)
-            p.line("index", "confirmed", source=extrap_df, line_width=2, line_color=colors[i], line_dash="dotted")
+        # if should_extrapolate:
+        #     print(">>> would extrapolate here:", country)
+        #     extrap_df = extrapolate_until(country)
+        #     p.line("index", "confirmed", source=extrap_df, line_width=2, line_color=colors[i], line_dash="dotted")
 
     p.legend.location = "top_left"
     p.xaxis.axis_label = "# of days after reaching 100 cases"
@@ -113,7 +116,7 @@ def make_heatmap():
             df2_al = align(df_by_country[c2])["confirmed"]
             n = min(len(df1_al), len(df2_al))
             dist_matrix[i, j] = euclidean(df1_al[:n], df2_al[:n], [1/n]*n)
-            print(c1, c2, dist_matrix[i, j])
+            # print(c1, c2, dist_matrix[i, j])
 
     factors = display_countries
     x, y = [x.ravel() for x in np.meshgrid(factors, factors, indexing='ij')]
@@ -142,7 +145,7 @@ def make_figure_growth_rate():
         p.circle(x=range(len(y)), y=y, color=colors[i])
 
 
-    p.legend.location = "top_left"
+    # p.legend.location = "top_left"
     p.xaxis.axis_label = f"last {last_days} days"
     p.yaxis.axis_label = "daily growth rate"
 
@@ -177,34 +180,34 @@ def country_rem_change(event):
     display_countries.remove(event.item)
     update()
 
-def extrapolate_until(c):
-    df = df_by_country[c]
-    aligned_conf = align(df)["confirmed"]        
-    # get average growth rate
-    rate = 0
-    for i in range(1, aligned_conf.shape[0]):
-        rate += aligned_conf.iloc[i] / aligned_conf.iloc[i-1]
-    rate = rate / (aligned_conf.shape[0] - 1)
-    # how many days to extrapolate for this country
-    extra = date.fromisoformat(extrapolate_until_date) - date.today()
-    new_values = [0] * extra.days
-    new_values[0] = aligned_conf.iloc[-1]
-    for i in range(1, len(new_values)):
-        new_values[i] = int(new_values[i-1] * rate)
-    new_index = range(len(aligned_conf) - 1, len(aligned_conf) + len(new_values) - 1)
-    return pd.DataFrame(new_values, index=new_index, columns=["confirmed"])
+# def extrapolate_until(c):
+#     df = df_by_country[c]
+#     aligned_conf = align(df)["confirmed"]        
+#     # get average growth rate
+#     rate = 0
+#     for i in range(1, aligned_conf.shape[0]):
+#         rate += aligned_conf.iloc[i] / aligned_conf.iloc[i-1]
+#     rate = rate / (aligned_conf.shape[0] - 1)
+#     # how many days to extrapolate for this country
+#     extra = date.fromisoformat(extrapolate_until_date) - date.today()
+#     new_values = [0] * extra.days
+#     new_values[0] = aligned_conf.iloc[-1]
+#     for i in range(1, len(new_values)):
+#         new_values[i] = int(new_values[i-1] * rate)
+#     new_index = range(len(aligned_conf) - 1, len(aligned_conf) + len(new_values) - 1)
+#     return pd.DataFrame(new_values, index=new_index, columns=["confirmed"])
 
 
-def dt_pckr_change(attrname, old, new):
-    global should_extrapolate, extrapolate_until_date
-    should_extrapolate = True
-    extrapolate_until_date = new
-    update()
+# def dt_pckr_change(attrname, old, new):
+#     global should_extrapolate, extrapolate_until_date
+#     should_extrapolate = True
+#     extrapolate_until_date = new
+#     update()
 
 
 def checkbox_log_scale_click(event):
     global is_log_scale
-    print(event)
+    # print(event)
     is_log_scale = not is_log_scale
     update()
 
@@ -225,10 +228,10 @@ def make_controls():
     country_rem_ddo.on_click(country_rem_change)
     controls.append(country_rem_ddo)
 
-    dt_pckr_value = extrapolate_until_date if extrapolate_until_date else date.today()
-    dt_pckr_strt = DatePicker(title='Extrapolate until:', value=dt_pckr_value, min_date=date.today(), max_date=date.today() + timedelta(20))
-    dt_pckr_strt.on_change('value', dt_pckr_change)
-    controls.append(dt_pckr_strt)
+    # dt_pckr_value = extrapolate_until_date if extrapolate_until_date else date.today()
+    # dt_pckr_strt = DatePicker(title='Extrapolate until:', value=dt_pckr_value, min_date=date.today(), max_date=date.today() + timedelta(20))
+    # dt_pckr_strt.on_change('value', dt_pckr_change)
+    # controls.append(dt_pckr_strt)
 
     active = [0] if is_log_scale else []
     checkbox_log_scale = CheckboxGroup(labels=["Log scale"], active=active)
