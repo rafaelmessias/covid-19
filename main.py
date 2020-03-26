@@ -40,6 +40,8 @@ df_by_country = {}
 # extra_values = {}
 # extrapolate_until_date = None
 is_log_scale = True
+align_by_values = [100, 10]
+align_by = 0
 
 ##### CALLBACKS
 
@@ -71,8 +73,9 @@ def get_df_by_country():
 
     #beds_by_country
 
-def align(df, cases=100):
-    aligned_df = df[df["confirmed"] >= cases]
+def align(df):
+    column, value = ["confirmed", "deaths"][align_by], align_by_values[align_by]
+    aligned_df = df[df[column] >= value]
     aligned_df.index = range(aligned_df.shape[0])
     return aligned_df
 
@@ -85,7 +88,9 @@ def make_figure():
     ]
 
     y_axis_type = "log" if is_log_scale else "linear"
-    p = figure(title="Aligned by the 100th case (dashed = deaths)", plot_width=800, plot_height=400, tools="hover", tooltips=TOOLTIPS, 
+    case_or_death = ["case", "death"][align_by]
+    title = f"Aligned by the {align_by_values[align_by]}th {case_or_death} (dashed = deaths)"
+    p = figure(title=title, plot_width=800, plot_height=400, tools="hover", tooltips=TOOLTIPS, 
             y_axis_type=y_axis_type, y_range = [10 ** 0, 10 ** 5])
     
     bar_width = 0.8 / len(df_by_country)
@@ -211,6 +216,19 @@ def checkbox_log_scale_click(event):
     is_log_scale = not is_log_scale
     update()
 
+
+def align_by_radio_click(event):
+    global align_by
+    align_by = event
+    update()
+
+def align_by_text_change(attr, old, new):
+    global align_by_value
+    try:
+        align_by_values[align_by] = int(new)
+    except:
+        pass
+    update()
         
 def make_controls():
     controls = []
@@ -237,6 +255,16 @@ def make_controls():
     checkbox_log_scale = CheckboxGroup(labels=["Log scale"], active=active)
     checkbox_log_scale.on_click(checkbox_log_scale_click)
     controls.append(checkbox_log_scale)
+
+    align_by_title = Div(text="Align by:")
+    align_by_radio = RadioButtonGroup(
+        labels=["Confirmed", "Deaths"], active=align_by)
+    align_by_radio.on_click(align_by_radio_click)
+    align_by_text = TextInput(value=str(align_by_values[align_by]))
+    align_by_text.on_change("value", align_by_text_change)
+    controls.append(align_by_title)
+    controls.append(align_by_text)    
+    controls.append(align_by_radio)
 
     return column(*controls, width=200)
 
