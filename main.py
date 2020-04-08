@@ -87,11 +87,19 @@ def make_figure():
         ("Cases", "@confirmed")
     ]
 
-    y_axis_type = "log" if is_log_scale else "linear"
+    y_max = max(align(df).confirmed.iloc[-1] for df in df_by_country.values())
+    print(y_max)
+
+    if is_log_scale:
+        y_axis_type = "log"
+        y_range = [1, y_max * 1.5]
+    else:
+        y_axis_type = "linear"
+        y_range = [0, y_max * 1.05]
     case_or_death = ["case", "death"][align_by]
     title = f"Aligned by the {align_by_values[align_by]}th {case_or_death} (dashed = deaths)"
     p = figure(title=title, plot_width=800, plot_height=400, tools="hover", tooltips=TOOLTIPS, 
-            y_axis_type=y_axis_type, y_range = [10 ** 0, 10 ** 5])
+            y_axis_type=y_axis_type, y_range=y_range)
     
     bar_width = 0.8 / len(df_by_country)
 
@@ -301,7 +309,10 @@ def update():
     get_df_by_country()
     layout.children[0] = make_controls()
     layout.children[1] = column(
-        row(make_figure(), make_heatmap()),
+        row(
+            make_figure(), 
+            # make_heatmap()
+        ),
         make_figure_growth_rate()
     )
 
@@ -311,7 +322,10 @@ get_df_by_country()
 layout = row(
     make_controls(), 
     column(
-        row(make_figure(), make_heatmap()),
+        row(
+            make_figure(), 
+            # make_heatmap()
+        ),
         make_figure_growth_rate())
 )
 
