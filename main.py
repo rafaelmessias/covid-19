@@ -32,7 +32,7 @@ for name in ["confirmed", "deaths"]:
 
 all_countries = sorted(data["confirmed"]["Country/Region"].unique())
 # display_countries must be a list because the order is important
-display_countries = [ "Italy", "Spain", "Sweden", "Denmark", "US" ]
+display_countries = [ "Sweden", "Denmark", "Norway", "Finland" ]
 # display_countries = ["Italy", "Spain", "US", "United Kingdom", "Germany" ]
 country_sel_value = all_countries[0]
 df_by_country = {}
@@ -148,19 +148,26 @@ def make_heatmap():
 
 
 def make_figure_growth_rate():
-    last_days = 10
-    p = figure(title="Daily growth rate per country (day / day_before)", plot_width=800, plot_height=400)
+    last_days = 20
+    p = figure(title="Dashed = Daily deaths / Solid = 7-days trend", plot_width=800, plot_height=400)
 
     for i, (country, df) in enumerate(df_by_country.items()):
-        df_latest = df.iloc[-last_days-1:,:]
-        y = [df_latest["confirmed"].iloc[i] / df_latest["confirmed"].iloc[i-1] for i in range(1, len(df_latest))]
-        p.line(x=range(len(y)), y=y, line_width=2, line_color=colors[i])
-        p.circle(x=range(len(y)), y=y, color=colors[i])
+        daily_deaths = df.deaths.iloc[1:].values - df.deaths.iloc[:-1].values
+        y = daily_deaths[-last_days:]
+        mean_last_week = []
+        for j in range(len(daily_deaths)-last_days, len(daily_deaths)):
+            mean_last_week.append(np.mean(daily_deaths[j-6:j+1]))            
+        p.line(x=range(len(y)), y=y, 
+                line_width=2, line_color=colors[i], line_dash="dashed")
+        p.line(x=range(len(mean_last_week)), y=mean_last_week, 
+                line_width=2, line_color=colors[i])
+        # p.circle(x=range(len(y)), y=y, color=colors[i])
+        # p.line(x=range(len(daily_deaths)), y=daily_deaths, line_width=2, line_color=colors[i])
 
 
     # p.legend.location = "top_left"
-    p.xaxis.axis_label = f"last {last_days} days"
-    p.yaxis.axis_label = "daily growth rate"
+    p.xaxis.axis_label = f"Last {last_days} days"
+    p.yaxis.axis_label = "Daily"
 
     return p
 
